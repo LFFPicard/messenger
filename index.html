@@ -1,0 +1,1126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MESSENGER — Bike Courier Game</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Barlow+Condensed:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --yellow: #FFD600;
+    --cyan: #00E5FF;
+    --orange: #FF6B35;
+    --purple: #B14DFF;
+    --green: #00FF9F;
+    --pink: #FF4081;
+    --bg: #080808;
+    --bg2: #0f0f0f;
+    --bg3: #141414;
+    --border: #1e1e1e;
+    --text: #e0e0e0;
+    --muted: #555;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    overflow-x: hidden;
+    cursor: default;
+  }
+
+  /* ── NOISE OVERLAY ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+    opacity: 0.03;
+    pointer-events: none;
+    z-index: 999;
+  }
+
+  /* ── NAV ── */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 40px;
+    background: rgba(8,8,8,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .nav-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 4px;
+    color: var(--yellow);
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 32px;
+    list-style: none;
+  }
+
+  .nav-links a {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    transition: color 0.2s;
+  }
+
+  .nav-links a:hover { color: var(--yellow); }
+
+  /* ── HERO ── */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 120px 40px 80px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,214,0,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,214,0,0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    animation: gridScroll 20s linear infinite;
+  }
+
+  @keyframes gridScroll {
+    from { background-position: 0 0; }
+    to { background-position: 60px 60px; }
+  }
+
+  .hero-glow {
+    position: absolute;
+    width: 600px;
+    height: 600px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,214,0,0.06) 0%, transparent 70%);
+    top: -100px;
+    right: -100px;
+    pointer-events: none;
+  }
+
+  .hero-eyebrow {
+    font-size: 11px;
+    letter-spacing: 6px;
+    color: var(--yellow);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    opacity: 0;
+    animation: fadeUp 0.8s ease forwards 0.2s;
+  }
+
+  .hero-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(80px, 15vw, 180px);
+    line-height: 0.9;
+    color: #fff;
+    letter-spacing: 2px;
+    opacity: 0;
+    animation: fadeUp 0.8s ease forwards 0.4s;
+  }
+
+  .hero-title span {
+    color: var(--yellow);
+    display: block;
+  }
+
+  .hero-sub {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: clamp(16px, 2.5vw, 24px);
+    font-weight: 300;
+    color: #888;
+    margin-top: 24px;
+    max-width: 560px;
+    line-height: 1.5;
+    letter-spacing: 1px;
+    opacity: 0;
+    animation: fadeUp 0.8s ease forwards 0.6s;
+  }
+
+  .hero-tags {
+    display: flex;
+    gap: 12px;
+    margin-top: 32px;
+    flex-wrap: wrap;
+    opacity: 0;
+    animation: fadeUp 0.8s ease forwards 0.8s;
+  }
+
+  .tag {
+    font-size: 9px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    padding: 6px 14px;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    color: var(--muted);
+  }
+
+  .tag.highlight {
+    border-color: var(--yellow);
+    color: var(--yellow);
+  }
+
+  .hero-status {
+    margin-top: 48px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    opacity: 0;
+    animation: fadeUp 0.8s ease forwards 1s;
+  }
+
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 8px var(--green);
+    animation: pulse 2s ease infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+  }
+
+  .status-text {
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--green);
+    text-transform: uppercase;
+  }
+
+  .scroll-hint {
+    position: absolute;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    opacity: 0;
+    animation: fadeUp 0.8s ease forwards 1.4s;
+  }
+
+  .scroll-hint span {
+    font-size: 9px;
+    letter-spacing: 4px;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .scroll-line {
+    width: 1px;
+    height: 40px;
+    background: linear-gradient(to bottom, var(--yellow), transparent);
+    animation: scrollPulse 2s ease infinite;
+  }
+
+  @keyframes scrollPulse {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 1; }
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── SECTIONS ── */
+  section {
+    padding: 100px 40px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .section-label {
+    font-size: 10px;
+    letter-spacing: 6px;
+    color: var(--yellow);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  .section-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(36px, 5vw, 64px);
+    color: #fff;
+    letter-spacing: 1px;
+    margin-bottom: 40px;
+  }
+
+  /* ── ABOUT ── */
+  .about-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 60px;
+    align-items: start;
+  }
+
+  .about-text p {
+    font-size: 13px;
+    line-height: 1.9;
+    color: #999;
+    margin-bottom: 16px;
+  }
+
+  .about-text p strong {
+    color: var(--yellow);
+    font-weight: 500;
+  }
+
+  .about-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px;
+  }
+
+  .stat-box {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    padding: 24px;
+    transition: border-color 0.2s;
+  }
+
+  .stat-box:hover { border-color: var(--yellow); }
+
+  .stat-number {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 48px;
+    color: var(--yellow);
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+
+  .stat-label {
+    font-size: 9px;
+    letter-spacing: 3px;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  /* ── FEATURES ── */
+  .features-section {
+    background: var(--bg2);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 100px 0;
+  }
+
+  .features-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 40px;
+  }
+
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+    margin-top: 40px;
+  }
+
+  .feature-card {
+    background: var(--bg3);
+    padding: 32px;
+    border: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s, border-color 0.2s;
+  }
+
+  .feature-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--accent, var(--yellow));
+  }
+
+  .feature-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--accent, var(--yellow));
+  }
+
+  .feature-icon {
+    font-size: 32px;
+    margin-bottom: 16px;
+    display: block;
+  }
+
+  .feature-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #fff;
+    margin-bottom: 10px;
+  }
+
+  .feature-desc {
+    font-size: 12px;
+    line-height: 1.7;
+    color: #777;
+  }
+
+  /* ── ROADMAP ── */
+  .roadmap-section { padding: 100px 0; }
+
+  .roadmap-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 40px;
+  }
+
+  .phase-tabs {
+    display: flex;
+    overflow-x: auto;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    scrollbar-width: none;
+    margin-bottom: 0;
+  }
+
+  .phase-tab {
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: var(--muted);
+    padding: 14px 20px;
+    cursor: pointer;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 2px;
+    white-space: nowrap;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+
+  .phase-tab.active {
+    color: var(--phase-color);
+    border-bottom-color: var(--phase-color);
+    background: var(--bg2);
+  }
+
+  .phase-tab div:last-child {
+    font-size: 9px;
+    font-weight: 400;
+    margin-top: 2px;
+    opacity: 0.8;
+  }
+
+  .phase-content {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-top: none;
+    padding: 32px;
+  }
+
+  .phase-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .phase-title-block { display: flex; align-items: center; gap: 12px; }
+
+  .phase-icon { font-size: 28px; }
+
+  .phase-label-small {
+    font-size: 10px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .phase-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    color: #fff;
+    letter-spacing: 1px;
+  }
+
+  .phase-desc {
+    font-size: 12px;
+    color: #888;
+    line-height: 1.6;
+    max-width: 500px;
+    margin-bottom: 24px;
+  }
+
+  .duration-badge {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 12px 20px;
+    text-align: center;
+    min-width: 130px;
+  }
+
+  .duration-label {
+    font-size: 9px;
+    letter-spacing: 3px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .duration-value {
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  .progress-bar-wrap { margin-bottom: 24px; }
+
+  .progress-bar-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    letter-spacing: 2px;
+    margin-bottom: 6px;
+  }
+
+  .progress-bar-bg {
+    height: 4px;
+    background: #1a1a1a;
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.4s ease;
+  }
+
+  .tasks-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 28px;
+  }
+
+  .task-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .task-item:hover { border-color: #333; }
+  .task-item.done { opacity: 0.5; border-color: transparent; }
+
+  .task-check {
+    width: 18px;
+    height: 18px;
+    border: 2px solid #333;
+    border-radius: 3px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 900;
+    transition: all 0.15s;
+  }
+
+  .task-item.done .task-check {
+    color: #000;
+    font-weight: 900;
+  }
+
+  .task-text {
+    flex: 1;
+    font-size: 12px;
+    color: #ccc;
+    line-height: 1.4;
+    transition: all 0.15s;
+  }
+
+  .task-item.done .task-text {
+    color: #444;
+    text-decoration: line-through;
+  }
+
+  .cat-badge {
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    border: 1px solid;
+    border-radius: 3px;
+    padding: 2px 7px;
+    flex-shrink: 0;
+    font-weight: 700;
+  }
+
+  .milestone-box {
+    border-left: 4px solid;
+    border-radius: 4px;
+    padding: 16px 20px;
+  }
+
+  .milestone-label {
+    font-size: 9px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .milestone-text {
+    font-size: 14px;
+    color: #ddd;
+    font-weight: 500;
+    font-family: 'Barlow Condensed', sans-serif;
+    letter-spacing: 1px;
+  }
+
+  .phase-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 32px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-top: none;
+  }
+
+  .phase-nav-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: #ccc;
+    padding: 8px 16px;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.15s;
+  }
+
+  .phase-nav-btn:hover { border-color: #555; }
+  .phase-nav-btn:disabled { color: #333; border-color: #1a1a1a; cursor: default; }
+
+  .phase-dots { display: flex; gap: 8px; }
+
+  .phase-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #333;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  /* ── DEV LOG ── */
+  .devlog-section {
+    background: var(--bg2);
+    border-top: 1px solid var(--border);
+    padding: 100px 0;
+  }
+
+  .devlog-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 40px;
+  }
+
+  .devlog-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+    margin-top: 40px;
+  }
+
+  .log-entry {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    padding: 28px;
+    transition: border-color 0.2s;
+  }
+
+  .log-entry:hover { border-color: #333; }
+
+  .log-date {
+    font-size: 9px;
+    letter-spacing: 3px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .log-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: #fff;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+  }
+
+  .log-body {
+    font-size: 12px;
+    line-height: 1.7;
+    color: #777;
+  }
+
+  .log-tags {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+  }
+
+  .log-tag {
+    font-size: 9px;
+    letter-spacing: 2px;
+    padding: 3px 8px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    text-transform: uppercase;
+    border-radius: 2px;
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .footer-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    letter-spacing: 4px;
+    color: var(--yellow);
+  }
+
+  .footer-text {
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 768px) {
+    nav { padding: 16px 20px; }
+    .nav-links { display: none; }
+    .hero { padding: 100px 20px 60px; }
+    section { padding: 60px 20px; }
+    .about-grid { grid-template-columns: 1fr; gap: 40px; }
+    .features-grid { grid-template-columns: 1fr; }
+    .devlog-grid { grid-template-columns: 1fr; }
+    .features-inner, .roadmap-inner, .devlog-inner { padding: 0 20px; }
+    footer { padding: 24px 20px; }
+  }
+
+  @media (max-width: 600px) {
+    .about-stats { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">🚲 MESSENGER</div>
+  <ul class="nav-links">
+    <li><a href="#about">About</a></li>
+    <li><a href="#features">Features</a></li>
+    <li><a href="#roadmap">Roadmap</a></li>
+    <li><a href="#devlog">Dev Log</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-grid"></div>
+  <div class="hero-glow"></div>
+  <div class="hero-eyebrow">🎮 Indie Game · In Development</div>
+  <h1 class="hero-title">MESSEN<span>GER</span></h1>
+  <p class="hero-sub">Race through a living city as a bike courier. Pull stunts, dodge traffic, build your rep, and upgrade your ride.</p>
+  <div class="hero-tags">
+    <span class="tag highlight">Low-Poly</span>
+    <span class="tag">Open World</span>
+    <span class="tag">Arcade</span>
+    <span class="tag">Unity 6</span>
+    <span class="tag">Solo Dev</span>
+  </div>
+  <div class="hero-status">
+    <div class="status-dot"></div>
+    <span class="status-text">Phase 01 — Core Prototype</span>
+  </div>
+  <div class="scroll-hint">
+    <span>Scroll</span>
+    <div class="scroll-line"></div>
+  </div>
+</div>
+
+<!-- ABOUT -->
+<section id="about">
+  <div class="section-label">// About The Game</div>
+  <h2 class="section-title">Deliver. Stunt. Survive.</h2>
+  <div class="about-grid">
+    <div class="about-text">
+      <p>Messenger is an <strong>open-world bike courier game</strong> inspired by the chaos and energy of Crazy Taxi. You're a rider in a dense, living city — and every delivery is a race against the clock.</p>
+      <p>Weave through <strong>live traffic</strong>, dodge pedestrians, and find the fastest route. But the real rewards come from style — pulling off close calls, hitting stunt ramps, and chaining combos for multiplied rep.</p>
+      <p><strong>Rep is everything.</strong> Build enough and you unlock new bikes, upgrade your current ride, or go electric — with a boost that changes everything.</p>
+      <p>There's no end. Just the city, your bike, and the next delivery.</p>
+    </div>
+    <div class="about-stats">
+      <div class="stat-box">
+        <div class="stat-number">01</div>
+        <div class="stat-label">Current Phase</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-number">06</div>
+        <div class="stat-label">Total Phases</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-number">∞</div>
+        <div class="stat-label">Replayability</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-number">1</div>
+        <div class="stat-label">Dev (So Far)</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<div class="features-section" id="features">
+  <div class="features-inner">
+    <div class="section-label">// Core Gameplay</div>
+    <h2 class="section-title">What Makes It Tick</h2>
+    <div class="features-grid">
+      <div class="feature-card" style="--accent: #FFD600">
+        <span class="feature-icon">📦</span>
+        <div class="feature-title">Delivery Jobs</div>
+        <p class="feature-desc">Accept pickup and drop-off jobs across the city. Timed runs, fragile packages, VIP deliveries — each with its own risk and reward.</p>
+      </div>
+      <div class="feature-card" style="--accent: #FF6B35">
+        <span class="feature-icon">🤸</span>
+        <div class="feature-title">Stunt System</div>
+        <p class="feature-desc">Hit ramps, grind rails, and chain close calls through traffic. Rep multipliers reward style as much as speed.</p>
+      </div>
+      <div class="feature-card" style="--accent: #00E5FF">
+        <span class="feature-icon">🏙️</span>
+        <div class="feature-title">Living City</div>
+        <p class="feature-desc">Live traffic, pedestrians, and dynamic obstacles make every run different. Cause chaos and pay the price — or thread the needle and reap the rewards.</p>
+      </div>
+      <div class="feature-card" style="--accent: #B14DFF">
+        <span class="feature-icon">⚡</span>
+        <div class="feature-title">Bike Upgrades</div>
+        <p class="feature-desc">Start basic. Earn rep, unlock parts, and build your dream ride. Or go electric — boost when it matters most.</p>
+      </div>
+      <div class="feature-card" style="--accent: #00FF9F">
+        <span class="feature-icon">📈</span>
+        <div class="feature-title">Rep System</div>
+        <p class="feature-desc">From Rookie to Legend — every delivery, stunt, and close call counts. Your rep defines what you unlock and how the city sees you.</p>
+      </div>
+      <div class="feature-card" style="--accent: #FF4081">
+        <span class="feature-icon">🗺️</span>
+        <div class="feature-title">Expanding World</div>
+        <p class="feature-desc">One district to start. More locations, weather systems, and challenge modes planned as the game grows.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ROADMAP -->
+<div class="roadmap-section" id="roadmap">
+  <div class="roadmap-inner">
+    <div class="section-label">// Development Roadmap</div>
+    <h2 class="section-title">The Plan</h2>
+
+    <div class="phase-tabs" id="phaseTabs"></div>
+    <div class="phase-content" id="phaseContent"></div>
+    <div class="phase-nav">
+      <button class="phase-nav-btn" id="prevBtn" onclick="changePhase(-1)">← PREV</button>
+      <div class="phase-dots" id="phaseDots"></div>
+      <button class="phase-nav-btn" id="nextBtn" onclick="changePhase(1)">NEXT →</button>
+    </div>
+  </div>
+</div>
+
+<!-- DEV LOG -->
+<div class="devlog-section" id="devlog">
+  <div class="devlog-inner">
+    <div class="section-label">// Dev Log</div>
+    <h2 class="section-title">Progress Updates</h2>
+    <div class="devlog-grid">
+      <div class="log-entry">
+        <div class="log-date">March 2026 — Entry 01</div>
+        <div class="log-title">Day One — It Moves!</div>
+        <p class="log-body">First session in Unity. Got bike physics working with the new Input System, assembled the bike model hierarchy, and built the first street scene with SimplePoly City assets. The bike drives. The city exists. It's a start.</p>
+        <div class="log-tags">
+          <span class="log-tag">Physics</span>
+          <span class="log-tag">Unity</span>
+          <span class="log-tag">Scene</span>
+        </div>
+      </div>
+      <div class="log-entry" style="opacity:0.4">
+        <div class="log-date">Coming Soon</div>
+        <div class="log-title">Entry 02</div>
+        <p class="log-body">Next session — wheel animation, delivery job system, and more city detail.</p>
+        <div class="log-tags">
+          <span class="log-tag">Planned</span>
+        </div>
+      </div>
+      <div class="log-entry" style="opacity:0.4">
+        <div class="log-date">Coming Soon</div>
+        <div class="log-title">Entry 03</div>
+        <p class="log-body">More updates to follow as development progresses.</p>
+        <div class="log-tags">
+          <span class="log-tag">Planned</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">🚲 MESSENGER</div>
+  <div class="footer-text">Solo Indie Dev · Built With Unity 6 · In Development 2026</div>
+</footer>
+
+<script>
+const phases = [
+  {
+    id: 1, label: "PHASE 01", title: "Core Prototype", color: "#FFD600", icon: "🚲",
+    duration: "4–6 weeks", status: "active",
+    description: "Get a bike moving through a city block. Prove the feel is fun before building anything else.",
+    tasks: [
+      { id: "1a", text: "Bike physics — acceleration, steering, braking, momentum", cat: "Core" },
+      { id: "1b", text: "Basic city tile/block layout (single district)", cat: "World" },
+      { id: "1c", text: "Pickup & delivery loop — accept job, navigate, deliver", cat: "Gameplay" },
+      { id: "1d", text: "Basic HUD — money counter, rep bar, job timer", cat: "UI" },
+      { id: "1e", text: "Collision detection (walls, props)", cat: "Core" },
+      { id: "1f", text: "Camera system — follow cam with look-ahead", cat: "Core" },
+    ],
+    milestone: "Playable vertical slice — fun to ride around",
+  },
+  {
+    id: 2, label: "PHASE 02", title: "City Comes Alive", color: "#00E5FF", icon: "🏙️",
+    duration: "6–8 weeks", status: "upcoming",
+    description: "Fill the streets. Traffic, pedestrians, and a real city layout that rewards exploration.",
+    tasks: [
+      { id: "2a", text: "Expanded city map — multiple districts, shortcuts", cat: "World" },
+      { id: "2b", text: "Live traffic system — cars with AI pathing & lanes", cat: "World" },
+      { id: "2c", text: "Pedestrian AI — walking, reacting to player", cat: "World" },
+      { id: "2d", text: "Consequence system — lose money/rep for hitting pedestrians", cat: "Gameplay" },
+      { id: "2e", text: "Environmental props — bins, signs, barriers as obstacles", cat: "World" },
+      { id: "2f", text: "Day cycle / lighting pass", cat: "World" },
+    ],
+    milestone: "City feels populated and reactive",
+  },
+  {
+    id: 3, label: "PHASE 03", title: "Stunts & Rep", color: "#FF6B35", icon: "🤸",
+    duration: "5–7 weeks", status: "upcoming",
+    description: "The signature feel. Close calls, big air, and the rush of threading through traffic.",
+    tasks: [
+      { id: "3a", text: "Stunt detection — jumps, ramps, drops, near misses", cat: "Gameplay" },
+      { id: "3b", text: "Close call system — risk-reward for weaving tight gaps", cat: "Gameplay" },
+      { id: "3c", text: "Rep & combo multiplier — chain stunts for bigger rewards", cat: "Gameplay" },
+      { id: "3d", text: "Stunt sections built into map — designed ramps & rails", cat: "World" },
+      { id: "3e", text: "Rep rank titles & unlocks — Rookie → Legend", cat: "Progression" },
+      { id: "3f", text: "Score feedback UI — floating numbers, screen reactions", cat: "UI" },
+    ],
+    milestone: "Performing stunts feels genuinely rewarding",
+  },
+  {
+    id: 4, label: "PHASE 04", title: "Bikes & Progression", color: "#B14DFF", icon: "⚡",
+    duration: "5–6 weeks", status: "upcoming",
+    description: "Give players something to grind for. Upgrades, new bikes, and the electric boost.",
+    tasks: [
+      { id: "4a", text: "Bike upgrade shop — parts system (tyres, frame, gears)", cat: "Progression" },
+      { id: "4b", text: "Stat effects — upgrades impact speed, handling, jump height", cat: "Core" },
+      { id: "4c", text: "New bike unlocks tied to rep milestones", cat: "Progression" },
+      { id: "4d", text: "Electric bike — boost mechanic, charge bar, unique handling", cat: "Gameplay" },
+      { id: "4e", text: "Save/load system — persistent progress", cat: "Core" },
+      { id: "4f", text: "Job variety — timed runs, fragile packages, VIP deliveries", cat: "Gameplay" },
+    ],
+    milestone: "Players feel driven to keep playing and grinding",
+  },
+  {
+    id: 5, label: "PHASE 05", title: "Polish & Ship", color: "#00FF9F", icon: "🎮",
+    duration: "6–8 weeks", status: "upcoming",
+    description: "Ruthless polish pass. Sound, juice, performance, and making it feel like a real game.",
+    tasks: [
+      { id: "5a", text: "Sound design — tyre sounds, city ambience, stunt SFX, music", cat: "Audio" },
+      { id: "5b", text: "Visual effects — speed blur, sparks, near-miss flash", cat: "Polish" },
+      { id: "5c", text: "Performance optimisation — stable frame rate in dense traffic", cat: "Core" },
+      { id: "5d", text: "Leaderboard / high score tracking", cat: "UI" },
+      { id: "5e", text: "Onboarding — tutorial flow for new players", cat: "UI" },
+      { id: "5f", text: "Bug bash & play-testing loop", cat: "QA" },
+    ],
+    milestone: "Ready for initial release / public build",
+  },
+  {
+    id: 6, label: "FUTURE", title: "Post-Launch", color: "#FF4081", icon: "🗺️",
+    duration: "Ongoing", status: "future",
+    description: "Keep the world growing. New places, new goals, new reasons to ride.",
+    tasks: [
+      { id: "6a", text: "Additional city locations — new districts with unique vibes", cat: "World" },
+      { id: "6b", text: "Endgame / story arc — optional narrative layer or final challenge", cat: "Gameplay" },
+      { id: "6c", text: "Weather system — rain, night, fog affecting handling", cat: "World" },
+      { id: "6d", text: "More bike types — cargo bike, BMX, fixie", cat: "Progression" },
+      { id: "6e", text: "Daily/weekly challenge jobs", cat: "Gameplay" },
+      { id: "6f", text: "Multiplayer — race or co-op delivery mode", cat: "Gameplay" },
+    ],
+    milestone: "Living game with ongoing content",
+  },
+];
+
+const catColors = {
+  Core: "#FFD600", World: "#00E5FF", Gameplay: "#FF6B35",
+  UI: "#B14DFF", Progression: "#00FF9F", Audio: "#FF4081",
+  Polish: "#FF9800", QA: "#78909C"
+};
+
+let activePhase = 0;
+let checked = JSON.parse(localStorage.getItem('messengerTasks') || '{}');
+
+function saveChecked() {
+  try { localStorage.setItem('messengerTasks', JSON.stringify(checked)); } catch(e) {}
+}
+
+function toggleTask(id) {
+  checked[id] = !checked[id];
+  saveChecked();
+  renderPhase();
+}
+
+function changePhase(dir) {
+  activePhase = Math.max(0, Math.min(phases.length - 1, activePhase + dir));
+  renderAll();
+}
+
+function setPhase(i) {
+  activePhase = i;
+  renderAll();
+}
+
+function renderTabs() {
+  const tabs = document.getElementById('phaseTabs');
+  tabs.innerHTML = phases.map((p, i) => `
+    <button class="phase-tab ${i === activePhase ? 'active' : ''}"
+      style="--phase-color: ${p.color}"
+      onclick="setPhase(${i})">
+      <div>${p.label}</div>
+      <div>${p.title.toUpperCase()}</div>
+    </button>
+  `).join('');
+}
+
+function renderPhase() {
+  const p = phases[activePhase];
+  const total = p.tasks.length;
+  const done = p.tasks.filter(t => checked[t.id]).length;
+  const pct = Math.round((done / total) * 100);
+
+  document.getElementById('phaseContent').innerHTML = `
+    <div class="phase-header">
+      <div>
+        <div class="phase-title-block">
+          <span class="phase-icon">${p.icon}</span>
+          <div>
+            <div class="phase-label-small" style="color:${p.color}">${p.label}</div>
+            <div class="phase-name">${p.title}</div>
+          </div>
+        </div>
+        <p class="phase-desc" style="margin-top:12px">${p.description}</p>
+      </div>
+      <div class="duration-badge">
+        <div class="duration-label">Duration</div>
+        <div class="duration-value" style="color:${p.color}">${p.duration}</div>
+      </div>
+    </div>
+
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-header">
+        <span style="color:#555;letter-spacing:3px;font-size:10px">TASK PROGRESS</span>
+        <span style="color:${p.color};font-weight:700;font-size:10px">${done}/${total} · ${pct}%</span>
+      </div>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" style="width:${pct}%;background:linear-gradient(90deg,${p.color}88,${p.color})"></div>
+      </div>
+    </div>
+
+    <div class="tasks-list">
+      ${p.tasks.map(task => `
+        <div class="task-item ${checked[task.id] ? 'done' : ''}" onclick="toggleTask('${task.id}')">
+          <div class="task-check" style="border-color:${checked[task.id] ? p.color : '#333'};background:${checked[task.id] ? p.color : 'transparent'}">
+            ${checked[task.id] ? '✓' : ''}
+          </div>
+          <div class="task-text">${task.text}</div>
+          <div class="cat-badge" style="color:${catColors[task.cat]||'#666'};border-color:${catColors[task.cat]||'#666'}44">${task.cat.toUpperCase()}</div>
+        </div>
+      `).join('')}
+    </div>
+
+    <div class="milestone-box" style="background:${p.color}0d;border-color:${p.color}44;border-left-color:${p.color}">
+      <div class="milestone-label" style="color:${p.color}">🏁 PHASE MILESTONE</div>
+      <div class="milestone-text">${p.milestone}</div>
+    </div>
+  `;
+}
+
+function renderDots() {
+  document.getElementById('phaseDots').innerHTML = phases.map((p, i) => `
+    <div class="phase-dot" onclick="setPhase(${i})"
+      style="background:${i === activePhase ? p.color : '#333'}"></div>
+  `).join('');
+  document.getElementById('prevBtn').disabled = activePhase === 0;
+  document.getElementById('nextBtn').disabled = activePhase === phases.length - 1;
+}
+
+function renderAll() {
+  renderTabs();
+  renderPhase();
+  renderDots();
+}
+
+renderAll();
+</script>
+</body>
+</html>
